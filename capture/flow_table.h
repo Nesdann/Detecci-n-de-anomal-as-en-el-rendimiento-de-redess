@@ -4,6 +4,9 @@
 #include "flow.h"
 
 #define FLOW_TABLE_SIZE 65536
+#define EXPIRE_INTERVAL 1   // segundo
+#define ACTIVE_TIMEOUT 4   // segundos
+
 
 typedef struct flow_node {
     flow_t flow;
@@ -26,5 +29,7 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
 
 void flow_table_dump(flow_table_t *t);
 
+void flow_table_expire(flow_table_t *t,
+                       const struct timeval *now);
 
 #endif

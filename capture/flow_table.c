@@ -3,6 +3,8 @@
 #include "flow_table.h"
 #include <stdio.h>
 #include <arpa/inet.h>
+#include "time_utils.h"
+
 
 uint32_t hash_flow_key(const flow_key_t *k) {
     uint32_t h = 2166136261u;
@@ -71,3 +73,38 @@ void flow_table_dump(flow_table_t *t) {
         }
     }
 }
+
+
+
+void flow_table_expire(flow_table_t *t,
+                       const struct timeval *now)
+{
+    for (int i = 0; i < FLOW_TABLE_SIZE; i++) {
+
+        flow_node_t **pp = &t->buckets[i];
+
+        while (*pp) {
+            flow_node_t *n = *pp;
+
+            double active =
+                timeval_diff(n->flow.last_seen,
+                             n->flow.first_seen);
+
+            if (active >= ACTIVE_TIMEOUT) {
+
+                //extract_features(&n->flow);
+                printf("EXPIRA y extrae flow %u packets %lu bytes\n",
+                n->flow.packets,
+                n->flow.bytes);
+
+                *pp = n->next;
+                free(n);
+
+            } else {
+                pp = &n->next;
+            }
+        }
+    }
+}
+
+

@@ -7,6 +7,9 @@
 #include <pcap.h>
 #include "flow.h"
 #include "flow_table.h"
+#include "time_utils.h"
+
+static struct timeval last_expire = {0};
 
 
 void on_packet(u_char *args,
@@ -64,6 +67,18 @@ void on_packet(u_char *args,
                              &flow.key,
                              &header->ts,
                              header->len);
+    
+    if (last_expire.tv_sec == 0) {
+        last_expire = header->ts;
+    }
+
+    double since =
+        timeval_diff(header->ts, last_expire);
+
+    if (since >= EXPIRE_INTERVAL) {
+        flow_table_expire(table, &header->ts);
+        last_expire = header->ts;
+    }
 
 }
 
@@ -78,13 +93,13 @@ int main() {
 
     
 
-    handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);
+    handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);//!!! posible para cambiar
     if (!handle) {
         fprintf(stderr, "pcap error: %s\n", errbuf);
         return 1;
     }
 
-    pcap_loop(handle, 10, on_packet, (u_char *)&table);
+    pcap_loop(handle, 10000, on_packet, (u_char *)&table);
     flow_table_dump(&table);
 
     pcap_close(handle);
