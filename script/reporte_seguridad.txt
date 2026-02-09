@@ -1,0 +1,92 @@
+==========================================
+   REPORTE DE DETECCIÓN DE INTRUSIONES    
+   Fecha: 2026-02-09 16:48:54.888625
+==========================================
+
+Se detectaron 17 flujos sospechosos.
+
+ALERTA #7:
+ - Tipo: POSIBLE FLOOD (DoS Attempt)
+ - IP Origen: 159001288 -> IP Destino: 1409329344
+ - Detalles: 60 pkts, 679639 bytes, 11327.32 avg_pkt
+------------------------------
+ALERTA #9:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 159001288
+ - Detalles: 50 pkts, 4890 bytes, 97.80 avg_pkt
+------------------------------
+ALERTA #16:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 159001288
+ - Detalles: 50 pkts, 4886 bytes, 97.72 avg_pkt
+------------------------------
+ALERTA #18:
+ - Tipo: POSIBLE FLOOD (DoS Attempt)
+ - IP Origen: 159001288 -> IP Destino: 1409329344
+ - Detalles: 64 pkts, 689207 bytes, 10768.86 avg_pkt
+------------------------------
+ALERTA #38:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 1066251828
+ - Detalles: 18 pkts, 8773 bytes, 487.39 avg_pkt
+------------------------------
+ALERTA #39:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1066251828 -> IP Destino: 1409329344
+ - Detalles: 19 pkts, 8418 bytes, 443.05 avg_pkt
+------------------------------
+ALERTA #52:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 1066251828
+ - Detalles: 13 pkts, 13199 bytes, 1015.31 avg_pkt
+------------------------------
+ALERTA #59:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 1066251828
+ - Detalles: 10 pkts, 12937 bytes, 1293.70 avg_pkt
+------------------------------
+ALERTA #85:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 3297180558
+ - Detalles: 9 pkts, 4447 bytes, 494.11 avg_pkt
+------------------------------
+ALERTA #89:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 3297180558 -> IP Destino: 1409329344
+ - Detalles: 11 pkts, 5759 bytes, 523.55 avg_pkt
+------------------------------
+ALERTA #96:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 534821411
+ - Detalles: 13 pkts, 3793 bytes, 291.77 avg_pkt
+------------------------------
+ALERTA #103:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 151038144 -> IP Destino: 4211081440
+ - Detalles: 9 pkts, 2913 bytes, 323.67 avg_pkt
+------------------------------
+ALERTA #108:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 618707491 -> IP Destino: 1409329344
+ - Detalles: 17 pkts, 25520 bytes, 1501.18 avg_pkt
+------------------------------
+ALERTA #111:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 16820416 -> IP Destino: 4211081199
+ - Detalles: 8 pkts, 2830 bytes, 353.75 avg_pkt
+------------------------------
+ALERTA #122:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 151038144 -> IP Destino: 4211081440
+ - Detalles: 4 pkts, 1662 bytes, 415.50 avg_pkt
+------------------------------
+ALERTA #124:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 1409329344 -> IP Destino: 2518672388
+ - Detalles: 27 pkts, 8328 bytes, 308.44 avg_pkt
+------------------------------
+ALERTA #127:
+ - Tipo: ANOMALÍA GENÉRICA (Comportamiento inusual)
+ - IP Origen: 2518672388 -> IP Destino: 1409329344
+ - Detalles: 25 pkts, 31456 bytes, 1258.24 avg_pkt
+------------------------------
