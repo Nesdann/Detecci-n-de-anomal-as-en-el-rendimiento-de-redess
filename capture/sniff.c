@@ -90,21 +90,17 @@ int main() {
     flow_table_t table;
     flow_table_init(&table);
 
-<<<<<<< HEAD
-    handle = pcap_open_live("en0", 65535, 1, 1000, errbuf);
-=======
-    
 
     
+
 
     handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);//!!! posible para cambiar
->>>>>>> fe48c2de01142341d7b193a0211019cac793ef1c
     if (!handle) {
         fprintf(stderr, "pcap error: %s\n", errbuf);
         return 1;
     }
 
-    pcap_loop(handle, 10000, on_packet, (u_char *)&table);
+    pcap_loop(handle, -1, on_packet, (u_char *)&table);
     flow_table_dump(&table);
 
     pcap_close(handle);

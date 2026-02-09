@@ -11,7 +11,7 @@ void extract_features(const flow_t *f)
     double bps = f->bytes / dur;
     double avg_pkt = (double)f->bytes / f->packets;
 
-    FILE *fp = fopen("flows.csv", "a");
+    FILE *fp = fopen("test_ata.csv", "a");
     if (!fp) return;
 
     fprintf(fp,
