@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <pcap.h>
 #include "flow.h"
+#include "flow_table.h"
 
 
 void on_packet(u_char *args,
@@ -56,12 +57,26 @@ void on_packet(u_char *args,
            flow.key.dst_port,
            flow.key.proto,
            flow.bytes);
+
+    flow_table_t *table = (flow_table_t *)args;
+
+    flow_table_get_or_create(table,
+                             &flow.key,
+                             &header->ts,
+                             header->len);
+
 }
 
 
 int main() {
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t *handle;
+    flow_table_t table;
+    flow_table_init(&table);
+
+    
+
+    
 
     handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);
     if (!handle) {
@@ -69,7 +84,9 @@ int main() {
         return 1;
     }
 
-    pcap_loop(handle, 5, on_packet, NULL);
+    pcap_loop(handle, 10, on_packet, (u_char *)&table);
+    flow_table_dump(&table);
+
     pcap_close(handle);
     return 0;
 }
