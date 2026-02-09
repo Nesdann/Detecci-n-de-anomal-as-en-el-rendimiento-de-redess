@@ -63,7 +63,7 @@ int main() {
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t *handle;
 
-    handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);
+    handle = pcap_open_live("en0", 65535, 1, 1000, errbuf);
     if (!handle) {
         fprintf(stderr, "pcap error: %s\n", errbuf);
         return 1;
