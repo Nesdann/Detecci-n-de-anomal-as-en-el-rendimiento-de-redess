@@ -8,6 +8,7 @@
 #include "flow.h"
 #include "flow_table.h"
 #include "time_utils.h"
+#include "features.h"
 
 static struct timeval last_expire = {0};
 

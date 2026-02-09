@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include "time_utils.h"
-
+#include "features.h"
 
 uint32_t hash_flow_key(const flow_key_t *k) {
     uint32_t h = 2166136261u;
@@ -92,7 +92,7 @@ void flow_table_expire(flow_table_t *t,
 
             if (active >= ACTIVE_TIMEOUT) {
 
-                //extract_features(&n->flow);
+                extract_features(&n->flow);
                 printf("EXPIRA y extrae flow %u packets %lu bytes\n",
                 n->flow.packets,
                 n->flow.bytes);
