@@ -16,21 +16,40 @@ uint32_t hash_flow_key(const flow_key_t *k) {
     return h;
 }
 
+flow_key_t normalize_key(flow_key_t k)
+{
+    flow_key_t res;
+    res=k;//se puede? o hacer una fun cpy_key para mas abtraccion
+    if (k.src_ip > k.dst_ip ||
+       (k.src_ip == k.dst_ip && k.src_port > k.dst_port))
+    {
+        res.src_ip = k.dst_ip;
+        res.dst_ip = k.src_ip;
+
+        res.src_port = k.dst_port;
+        res.dst_port = k.src_port;
+    }
+    return res;
+}
+
+
 void flow_table_init(flow_table_t *t) {
     for (int i = 0; i < FLOW_TABLE_SIZE; i++)
         t->buckets[i] = NULL;
 }
 
 flow_t *flow_table_get_or_create(flow_table_t *t,
-                                 const flow_key_t *key,
+                                 const flow_key_t *key_original,
                                  const struct timeval *ts,
                                  uint32_t pkt_len)
 {
-    uint32_t h = hash_flow_key(key) % FLOW_TABLE_SIZE;
+    flow_key_t keyN = normalize_key(*key_original);
+
+    uint32_t h = hash_flow_key(&keyN) % FLOW_TABLE_SIZE;
     flow_node_t *n = t->buckets[h];
 
     while (n) {
-        if (memcmp(&n->flow.key, key, sizeof(flow_key_t)) == 0) {
+        if (memcmp(&n->flow.key, &keyN, sizeof(flow_key_t)) == 0) {
             n->flow.packets++;
             n->flow.bytes += pkt_len;
             n->flow.last_seen = *ts;
@@ -39,14 +58,28 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
         n = n->next;
     }
 
+    // no existe => crear
     flow_node_t *new = malloc(sizeof(flow_node_t));
-    new->flow.key = *key;
+
+    new->flow.key = keyN;
     new->flow.packets = 1;
     new->flow.bytes = pkt_len;
     new->flow.first_seen = *ts;
-    new->flow.last_seen  = *ts;
+    new->flow.last_seen = *ts;
 
-    new->next = t->buckets[h];//conectarlo al nodo viejo o null
+    new->flow.initiator_ip = key_original->src_ip;
+    new->flow.initiator_port = key_original->src_port;
+
+    new->flow.fwd_packets = 0;
+    new->flow.bwd_packets = 0;
+    new->flow.fwd_bytes = 0;
+    new->flow.bwd_bytes = 0;
+    new->flow.syn_count=0;
+    new->flow.rst_count=0;
+    new->flow.fin_count=0;
+    new->flow.ack_count=0;
+
+    new->next = t->buckets[h];
     t->buckets[h] = new;
 
     return &new->flow;

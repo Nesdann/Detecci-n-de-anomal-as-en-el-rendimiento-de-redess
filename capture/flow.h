@@ -19,9 +19,24 @@ typedef struct {
     uint64_t packets;
     uint64_t bytes;
 
+    uint64_t fwd_packets;
+    uint64_t bwd_packets;
+
+    uint64_t fwd_bytes;
+    uint64_t bwd_bytes;
+
+    uint32_t syn_count;
+    uint32_t ack_count;
+    uint32_t fin_count;
+    uint32_t rst_count;
+
+    uint32_t initiator_ip;
+    uint16_t initiator_port;
+
     struct timeval first_seen;
     struct timeval last_seen;
 } flow_t;
+
 
 
 

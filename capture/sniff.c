@@ -20,6 +20,7 @@ void on_packet(u_char *args,
     const struct ip *ip_hdr;
     const struct tcphdr *tcp_hdr;
     const struct udphdr *udp_hdr;
+    flow_t * f;
 
     flow_t flow = {0};
 
@@ -64,10 +65,37 @@ void on_packet(u_char *args,
 
     flow_table_t *table = (flow_table_t *)args;
 
-    flow_table_get_or_create(table,
+    f=flow_table_get_or_create(table,
                              &flow.key,
                              &header->ts,
                              header->len);
+
+    if (flow.key.src_ip == f->initiator_ip &&
+    flow.key.src_port == f->initiator_port) {
+
+         f->fwd_packets++;
+         f->fwd_bytes += header->len;
+
+    } else {
+
+         f->bwd_packets++;
+          f->bwd_bytes += header->len;
+}
+
+    if (flow.key.proto == IPPROTO_TCP) {
+    if (tcp_hdr->th_flags & TH_SYN)
+        f->syn_count++;
+
+    if (tcp_hdr->th_flags & TH_ACK)
+        f->ack_count++;
+
+    if (tcp_hdr->th_flags & TH_FIN)
+        f->fin_count++;
+
+    if (tcp_hdr->th_flags & TH_RST)
+        f->rst_count++;
+}
+
     
     if (last_expire.tv_sec == 0) {
         last_expire = header->ts;
