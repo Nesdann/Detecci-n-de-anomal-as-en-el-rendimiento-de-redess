@@ -50,9 +50,9 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
 
     while (n) {
         if (memcmp(&n->flow.key, &keyN, sizeof(flow_key_t)) == 0) {
-            n->flow.packets++;
+            /*n->flow.packets++;
             n->flow.bytes += pkt_len;
-            n->flow.last_seen = *ts;
+            n->flow.last_seen = *ts;*/
             return &n->flow;
         }
         n = n->next;
@@ -78,6 +78,15 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
     new->flow.rst_count=0;
     new->flow.fin_count=0;
     new->flow.ack_count=0;
+
+    //
+    new->flow.iat_count=0;
+    new->flow.iat_max=0;
+    new->flow.iat_min=0;
+    new->flow.iat_sq_sum=0;
+    new->flow.iat_sq_sum=0;
+    new->flow.idle_time_total=0;
+    new->flow.idle_count=0;
 
     new->next = t->buckets[h];
     t->buckets[h] = new;

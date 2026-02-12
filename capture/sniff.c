@@ -64,6 +64,7 @@ void on_packet(u_char *args,
            flow.bytes);
 
     flow_table_t *table = (flow_table_t *)args;
+    //printf("KEY/RAW antes del get or crate: %u -> %u\n", flow.key.src_ip, flow.key.dst_ip);
 
     f=flow_table_get_or_create(table,
                              &flow.key,
@@ -96,6 +97,12 @@ void on_packet(u_char *args,
         f->rst_count++;
 }
 
+    //printf("packets antes de flow update,despeus del get or crate: %lu\n", f->packets);
+    //printf("ts: %ld.%06ld  last: %ld.%06ld\n",
+       header->ts.tv_sec, header->ts.tv_usec,
+       f->last_seen.tv_sec, f->last_seen.tv_usec);
+
+    flow_update(f,header->ts,header->len);
     
     if (last_expire.tv_sec == 0) {
         last_expire = header->ts;

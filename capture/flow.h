@@ -35,6 +35,19 @@ typedef struct {
 
     struct timeval first_seen;
     struct timeval last_seen;
+
+
+
+    //IAT stats
+    double iat_sum;
+    double iat_sq_sum;
+    double iat_min;
+    double iat_max;
+    uint32_t iat_count;
+
+    // idle stats 
+    double idle_time_total;
+    uint32_t idle_count;
 } flow_t;
 
 
