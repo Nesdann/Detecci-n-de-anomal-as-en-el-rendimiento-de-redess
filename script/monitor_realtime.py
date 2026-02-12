@@ -1,16 +1,15 @@
 import pandas as pd
 import numpy as np
 import joblib
-from tensorflow.keras.models import load_model
 import time
 import os
 import socket
 import struct
 
-# 1. Carga de modelos y utilidades
+
 print("Cargando cerebro de la IA...")
-# Asegurate de que estos archivos estén en la misma carpeta que este script
-model = load_model('ids_neural_model.h5')
+# Carga del modelo
+model = joblib.load('ids_neural_model.joblib')
 scaler = joblib.load('scaler.pkl')
 le = joblib.load('label_encoder.pkl')
 
@@ -29,7 +28,7 @@ def guardar_en_reporte(resultado, confianza, datos, ip_src, ip_dst):
     ruta_reporte = '/Users/jofreivaan_02/Desktop/python/script/reporte_seguridad.txt'
     
     with open(ruta_reporte, 'a') as f:
-        f.write(f"\n[{timestamp}] 🚨 ALERTA \n")
+        f.write(f"\n[{timestamp}]  ALERTA \n")
         f.write(f"Tipo: {resultado} ({confianza:.2f}% de confianza)\n")
         f.write(f"Origen: {ip_to_str(ip_src)} -> Destino: {ip_to_str(ip_dst)}\n")
         f.write(f"Detalles: {int(datos['packets'])} pkts, {int(datos['bytes'])} bytes, Proto: {int(datos['proto'])}\n")
@@ -53,10 +52,10 @@ def predecir_flujo(datos_crudos):
 
 # 2. Función de monitoreo en tiempo real
 def monitorear_archivo(ruta_al_archivo):
-    print(f"🛡️ ZENSE IDS: Vigilando tráfico compartido en: {ruta_al_archivo}")
+    print(f"IDS: Vigilando tráfico compartido en: {ruta_al_archivo}")
     
     if not os.path.exists(ruta_al_archivo):
-        print(f"❌ Error: El archivo {ruta_al_archivo} no existe.")
+        print(f"Error: El archivo {ruta_al_archivo} no existe.")
         return
 
     with open(ruta_al_archivo, 'r') as f:
@@ -91,7 +90,7 @@ def monitorear_archivo(ruta_al_archivo):
                 resultado, score = predecir_flujo(datos)
                 
                 if resultado != 'NORMAL' and score > 80:
-                    print(f"🚨 ALERTA: {resultado} ({score:.2f}%)")
+                    print(f" ALERTA: {resultado} ({score:.2f}%)")
                     # Guardamos automáticamente en el .txt
                     guardar_en_reporte(resultado, score, datos, ip_src_raw, ip_dst_raw)
                 else:
