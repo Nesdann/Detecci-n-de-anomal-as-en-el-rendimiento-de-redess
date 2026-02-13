@@ -8,7 +8,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
 
 # --- CONFIGURACIÓN Y RUTAS ---
-FILE_PATH = '../capture/flows.csv'  
+FILE_PATH = '../capture/test.csv'  
 MODEL_NAME = 'ids_neural_model.joblib' 
 SCALER_NAME = 'scaler.pkl'
 ENCODER_NAME = 'label_encoder.pkl'
@@ -16,7 +16,7 @@ FEATURES = ['proto', 'duration', 'packets', 'bytes', 'pps', 'bps', 'bpp', 'avg_p
 
 # condiciones
 def etiquetar_trafico(row):
-    """Reglas de ingeniería para clasificar el tráfico (Lógica de Nesdann)"""
+    """Reglas  para clasificar el tráfico """
     # SCAN: pocos paquetes y poco peso
     if row['packets'] < 5 and row['avg_pkt'] < 100:
         return 'SCAN'
@@ -27,11 +27,11 @@ def etiquetar_trafico(row):
 
 #  ENTRENAMIENTO
 def ejecutar_entrenamiento():
-    print("📊 Fusionando archivos para máxima precisión...")
+    print(" Fusionando archivos para máxima precisión...")
     archivos = [
         '../iforestmodel/train_attack.csv', 
         '../iforestmodel/train_normal.csv',
-        '../capture/flows.csv'
+        '../capture/test.csv'
     ]
     
     lista_df = []
@@ -52,7 +52,7 @@ def ejecutar_entrenamiento():
 
     # Eliminamos cualquier fila que haya quedado con NaNs 
     df = df.dropna()
-    print(f"✅ Dataset limpio: {len(df)} registros listos para procesar.")
+    print(f"Dataset limpio: {len(df)} registros listos para procesar.")
     
     
     # Feature 
@@ -82,16 +82,19 @@ def ejecutar_entrenamiento():
     
     mlp.fit(X_train, y_train)
 
+    print(f"Precisión en entrenamiento: {mlp.score(X_train, y_train) * 100:.2f}%")
+    print(f"Precisión en test: {mlp.score(X_test, y_test) * 100:.2f}%")
+
     # Verificación de Precisión
     y_pred = mlp.predict(X_test)
     precision = accuracy_score(y_test, y_pred) * 100
-    print(f"✅ Precisión final: {precision:.2f}%")
+    print(f"Precisión final: {precision:.2f}%")
 
     # Guardar Artefactos
     joblib.dump(mlp, MODEL_NAME)
     joblib.dump(scaler, SCALER_NAME)
     joblib.dump(le, ENCODER_NAME)
-    print(f"💾 Cerebro exportado con éxito como {MODEL_NAME}")
+    print(f" neurona exportado con éxito como {MODEL_NAME}")
 
 if __name__ == "__main__":
     ejecutar_entrenamiento()
