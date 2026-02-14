@@ -9,6 +9,16 @@
 #include "flow_table.h"
 #include "time_utils.h"
 #include "features.h"
+#include <signal.h>
+
+pcap_t *handle_global = NULL; // Para poder cerrarlo desde el signal handler
+
+void handle_sigint(int sig) {
+    if (handle_global) {
+        pcap_breakloop(handle_global); // Detiene el loop
+    }
+}
+
 
 static struct timeval last_expire = {0};
 
@@ -23,7 +33,7 @@ void on_packet(u_char *args,
     flow_t * f;
 
     flow_t flow = {0};
-
+    
     // Saltear Ethernet (14 bytes)
     ip_hdr = (struct ip *)(packet + 14);
 
@@ -54,14 +64,14 @@ void on_packet(u_char *args,
     flow.last_seen  = header->ts;
 
     // Debug: imprimir
-    printf("Flow:\n");
-    printf("  %s:%u -> %s:%u proto=%u bytes=%lu\n",
+    //printf("Flowh:\n");
+    /*printf("  %s:%u -> %s:%u proto=%u bytes=%lu\n",
            inet_ntoa(*(struct in_addr *)&flow.key.src_ip),
            flow.key.src_port,
            inet_ntoa(*(struct in_addr *)&flow.key.dst_ip),
            flow.key.dst_port,
            flow.key.proto,
-           flow.bytes);
+           flow.bytes);*/
 
     flow_table_t *table = (flow_table_t *)args;
     //printf("KEY/RAW antes del get or crate: %u -> %u\n", flow.key.src_ip, flow.key.dst_ip);
@@ -98,9 +108,9 @@ void on_packet(u_char *args,
 }
 
     //printf("packets antes de flow update,despeus del get or crate: %lu\n", f->packets);
-    //printf("ts: %ld.%06ld  last: %ld.%06ld\n",
-       header->ts.tv_sec, header->ts.tv_usec,
-       f->last_seen.tv_sec, f->last_seen.tv_usec);
+    /*printf("ts: %ld.%06ld  last: %ld.%06ld\n",
+           header->ts.tv_sec, header->ts.tv_usec,
+           f->last_seen.tv_sec, f->last_seen.tv_usec);*/
 
     flow_update(f,header->ts,header->len);
     
@@ -110,7 +120,13 @@ void on_packet(u_char *args,
 
     double since =
         timeval_diff(header->ts, last_expire);
+    //printf("since last expire: %.2f seconds\n", since);
+    struct timeval real_now;
+gettimeofday(&real_now, NULL);
 
+//printf("REAL: %ld.%06ld\n", real_now.tv_sec, real_now.tv_usec);
+//printf("PKT : %ld.%06ld\n", header->ts.tv_sec, header->ts.tv_usec);
+//printf(">>> EXPIRE CHECK\n");
     if (since >= EXPIRE_INTERVAL) {
         flow_table_expire(table, &header->ts);
         last_expire = header->ts;
@@ -121,23 +137,44 @@ void on_packet(u_char *args,
 
 int main() {
     char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t *handle;
     flow_table_t table;
     flow_table_init(&table);
 
-
-    
-
-
-    handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);//!!! posible para cambiar
-    if (!handle) {
-        fprintf(stderr, "pcap error: %s\n", errbuf);
+    // 1. Aumentamos el buffer de pcap para ráfagas de Nmap
+    // Usamos pcap_create y pcap_activate para tener más control
+    handle_global = pcap_create("enp5s0", errbuf);
+    if (!handle_global) {
+        fprintf(stderr, "pcap_create error: %s\n", errbuf);
         return 1;
     }
 
-    pcap_loop(handle, -1, on_packet, (u_char *)&table);
-    flow_table_dump(&table);
+    pcap_set_snaplen(handle_global, 65535);
+    pcap_set_promisc(handle_global, 1);
+    pcap_set_timeout(handle_global, 1000);
+    pcap_set_buffer_size(handle_global, 10 * 1024 * 1024); // 10MB de buffer para no perder paquetes
+    pcap_activate(handle_global);
 
-    pcap_close(handle);
+    // 2. Configurar el manejador de Ctrl+C
+    signal(SIGINT, handle_sigint);
+
+    printf("Sniffer activo. Capturando en enp5s0... (Presione Ctrl+C para finalizar y exportar)\n");
+
+    // 3. El loop (on_packet NO debe tener printfs internos para ser veloz)
+    pcap_loop(handle_global, -1, on_packet, (u_char *)&table);
+
+    // 4. Al salir del loop (por Ctrl+C), mostrar estadísticas y DUMP FINAL
+    struct pcap_stat stats;
+    if (pcap_stats(handle_global, &stats) >= 0) {
+        printf("\n--- Estadísticas Finales ---\n");
+        printf("  Paquetes recibidos: %u\n", stats.ps_recv);
+        printf("  Paquetes perdidos (drop): %u\n", stats.ps_drop);
+    }
+
+    printf("\nExportando flujos restantes en memoria...\n");
+    // Forzamos un expire de todo o un dump total
+    flow_table_dump(&table); 
+    //fun de final para exportar lo que quede en memoria, aunque no haya expirado
+    flow_table_expire_all(&table);
+    pcap_close(handle_global);
     return 0;
 }

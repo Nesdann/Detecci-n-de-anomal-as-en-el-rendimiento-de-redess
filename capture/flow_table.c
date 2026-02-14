@@ -57,12 +57,12 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
         }
         n = n->next;
     }
-
+    printf("creo flow*****************************************************************************\n");
     // no existe => crear
     flow_node_t *new = malloc(sizeof(flow_node_t));
 
     new->flow.key = keyN;
-    new->flow.packets = 1;
+    new->flow.packets = 0;//PROBLEMA?
     new->flow.bytes = pkt_len;
     new->flow.first_seen = *ts;
     new->flow.last_seen = *ts;
@@ -104,12 +104,12 @@ void flow_table_dump(flow_table_t *t) {
             inet_ntop(AF_INET, &n->flow.key.src_ip, src, sizeof(src));
             inet_ntop(AF_INET, &n->flow.key.dst_ip, dst, sizeof(dst));
 
-            printf("%s:%u -> %s:%u prototable=%u packetstable=%lu bytestable=%lu\n",
+            /*printf("%s:%u -> %s:%u prototable=%u packetstable=%lu bytestable=%lu\n",
                    src, n->flow.key.src_port,
                    dst, n->flow.key.dst_port,
                    n->flow.key.proto,
                    n->flow.packets,
-                   n->flow.bytes);
+                   n->flow.bytes);*/
 
             n = n->next;
         }
@@ -121,6 +121,8 @@ void flow_table_dump(flow_table_t *t) {
 void flow_table_expire(flow_table_t *t,
                        const struct timeval *now)
 {
+    //printf(">>> ENTRO A EXPIRE========================================================================\n");
+
     for (int i = 0; i < FLOW_TABLE_SIZE; i++) {
 
         flow_node_t **pp = &t->buckets[i];
@@ -145,6 +147,32 @@ void flow_table_expire(flow_table_t *t,
             } else {
                 pp = &n->next;
             }
+        }
+    }
+}
+void flow_table_expire_all(flow_table_t *t)
+{
+    //printf(">>> ENTRO A EXPIRE========================================================================\n");
+
+    for (int i = 0; i < FLOW_TABLE_SIZE; i++) {
+
+        flow_node_t **pp = &t->buckets[i];
+
+        while (*pp) {
+            flow_node_t *n = *pp;
+
+
+ 
+
+                extract_features(&n->flow);
+                printf("EXPIRA y extrae flow %u packets %lu bytes\n",
+                n->flow.packets,
+                n->flow.bytes);
+
+                *pp = n->next;
+                free(n);
+
+            
         }
     }
 }

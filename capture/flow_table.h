@@ -5,7 +5,7 @@
 
 #define FLOW_TABLE_SIZE 65536
 #define EXPIRE_INTERVAL 1   // segundo
-#define ACTIVE_TIMEOUT 4   // segundos
+#define ACTIVE_TIMEOUT 0.5   // segundos
 
 
 typedef struct flow_node {
