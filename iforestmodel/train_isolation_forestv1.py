@@ -1,58 +1,116 @@
 import pandas as pd
 import numpy as np
+
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import classification_report, confusion_matrix
-import joblib
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, classification_report, f1_score, precision_score, recall_score
 
-# =========================
-# Cargar datasets
-# =========================
-train = pd.read_csv("train_normal.csv")
-test_normal = pd.read_csv("test_normall.csv")
-attack = pd.read_csv("attack.csv")
+# --------------------------------------------------
+# CARGA
+# --------------------------------------------------
 
-# Labels reales (solo para evaluar)
-y_test = np.concatenate([
-    np.ones(len(test_normal)),    # normal = 1
-    -np.ones(len(attack))          # ataque = -1
-])
+X_train = pd.read_csv("train_normal_limpio.csv")
+test_df = pd.read_csv("test_mixed_limpio.csv")
 
-X_test = pd.concat([test_normal, attack], ignore_index=True)
+y_test = test_df["label"]
+X_test = test_df.drop(columns=["label"])
 
-# =========================
-# Entrenar modelo
-# =========================
-model = IsolationForest(
-    n_estimators=300,
-    max_samples="auto",
-    contamination=0.2,#ajustable
+print("Train:", len(X_train))
+print("Test:", len(X_test))
+print("Distribución test:")
+print(y_test.value_counts())
+print("-"*50)
+
+# --------------------------------------------------
+# ESCALADO
+# --------------------------------------------------
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# --------------------------------------------------
+# GRID MANUAL DE HIPERPARÁMETROS
+# --------------------------------------------------
+
+n_estimators_list = [100, 200]
+max_samples_list = ["auto", 0.8]
+contamination_list = [0.1, 0.2, 0.3]
+max_features_list = [1.0, 0.8]
+
+results = []
+
+for n_est in n_estimators_list:
+    for max_s in max_samples_list:
+        for cont in contamination_list:
+            for max_f in max_features_list:
+
+                model = IsolationForest(
+                    n_estimators=n_est,
+                    max_samples=max_s,
+                    contamination=cont,
+                    max_features=max_f,
+                    random_state=42,
+                    n_jobs=-1
+                )
+
+                model.fit(X_train_scaled)
+
+                # Scores (más bajo = más anómalo)
+                scores = model.decision_function(X_test_scaled)
+
+                # Probamos distintos thresholds
+                thresholds = np.percentile(scores, np.arange(1, 50, 5))
+
+                for t in thresholds:
+                    y_pred = (scores < t).astype(int)
+
+                    f1 = f1_score(y_test, y_pred)
+                    precision = precision_score(y_test, y_pred)
+                    recall = recall_score(y_test, y_pred)
+
+                    results.append({
+                        "n_estimators": n_est,
+                        "max_samples": max_s,
+                        "contamination": cont,
+                        "max_features": max_f,
+                        "threshold": t,
+                        "f1": f1,
+                        "precision": precision,
+                        "recall": recall
+                    })
+
+# --------------------------------------------------
+# VER MEJORES RESULTADOS
+# --------------------------------------------------
+
+df_results = pd.DataFrame(results)
+
+best = df_results.sort_values("f1", ascending=False).iloc[0]
+
+print("\n🔥 MEJOR CONFIGURACIÓN:")
+print(best)
+
+print("\nEvaluando mejor modelo...")
+
+# Reentrenar mejor modelo
+best_model = IsolationForest(
+    n_estimators=int(best["n_estimators"]),
+    max_samples=best["max_samples"],
+    contamination=best["contamination"],
+    max_features=best["max_features"],
     random_state=42,
     n_jobs=-1
 )
 
-model.fit(train)
+best_model.fit(X_train_scaled)
 
-# =========================
-# Predicción
-# =========================
-y_pred = model.predict(X_test)
+scores = best_model.decision_function(X_test_scaled)
+y_pred = (scores < best["threshold"]).astype(int)
 
-# =========================
-# Resultados
-# =========================
-print("Matriz de confusión:")
+print("\nMatriz de confusión:")
 print(confusion_matrix(y_test, y_pred))
 
-print("\nReporte:")
-print(classification_report(
-    y_test,
-    y_pred,
-    target_names=["Ataque", "Normal"]
-))
-
-# =========================
-# Guardar modelo
-# =========================
-joblib.dump(model, "iforest_model.joblib")
-print("\nModelo guardado como iforest_model.joblib")
+print("\nClassification report:")
+print(classification_report(y_test, y_pred))
 

@@ -90,11 +90,11 @@ void extract_features(const flow_t *f)
     int is_short_flow = (dur < 1.0) ? 1 : 0;
 
 
-    FILE *fp = fopen("test_ata.csv", "a");
+    FILE *fp = fopen("train_normal.csv", "a");
     if (!fp) return;
 
 
-    int label = 1; // 0 = normal, 1 = anomalous
+    int label = 0; // 0 = normal, 1 = anomalous
 
         fprintf(fp,
     "%s,%u,%s,%u,%u,"
