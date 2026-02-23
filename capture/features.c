@@ -5,7 +5,10 @@
 #include "flow.h"
 #include "flow_table.h"
 #include <math.h>
-
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#define FIFO_PATH "/tmp/ids_pipe"
 
 void flow_compute_time_features(flow_t *f,
                                 double *duration,
@@ -68,7 +71,7 @@ void extract_features(const flow_t *f)
     inet_ntop(AF_INET, &f->key.dst_ip, dst, sizeof(dst));
 
 
-    flow_compute_time_features(f,
+    flow_compute_time_features((flow_t*)f,
                               &duration,
                               &mean_iat,
                               &std_iat,
@@ -89,6 +92,16 @@ void extract_features(const flow_t *f)
 
     int is_short_flow = (dur < 1.0) ? 1 : 0;
 
+
+    // creamos las features en C
+    double packet_imbalance = fabs((double)f->fwd_packets - (double)f->bwd_packets);
+    double byte_imbalance = fabs((double)f->fwd_bytes - (double)f->bwd_bytes);
+    double flag_density = (double)(f->syn_count + f->ack_count + f->fin_count + f->rst_count) / (total_packets + 1e-6);
+    double syn_minus_ack = syn_ratio - ack_ratio;
+    double log_pps = log1p(pps); 
+    double log_bps = log1p(bps);
+
+    // preparar IPs para alertas HECHO
 
     FILE *fp = fopen("train_normal.csv", "a");
     if (!fp) return;
@@ -146,7 +159,33 @@ void extract_features(const flow_t *f)
 
 
 
-fclose(fp);
+    fclose(fp);
 
+ // 5. ENVIAR AL PIPE (Para detección en tiempo real)
+    // Formato: IP_S,IP_D,PORT_S,PORT_D,F1,F2,F3...F28
+    char pipe_msg[2048];
+    snprintf(pipe_msg, sizeof(pipe_msg),
+        "%s,%s,%u,%u," // Identificadores (índices 0-3)
+        "%lu,%lu,%lu,%lu,%lu,%lu," // 1-6: Packets/Bytes
+        "%u,%u,%u,%u,"             // 7-10: Flags
+        "%.6f,%.6f,%.6f,"          // 11-13: Ratios
+        "%.6f,%.6f,%.6f,"          // 14-16: dur, pps, bps
+        "%.6f,%.6f,%.6f,"          // 17-19: dir, byte, avg
+        "%.6f,%.6f,%d,"            // 20-22: std_iat, idle, short
+        "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n", // 23-28: Las nuevas (imbalance, density, logs)
+        src, dst, f->key.src_port, f->key.dst_port,
+        f->fwd_packets, f->bwd_packets, f->fwd_bytes, f->bwd_bytes, total_packets, total_bytes,
+        f->syn_count, f->ack_count, f->fin_count, f->rst_count,
+        syn_ratio, rst_ratio, ack_ratio, dur, pps, bps,
+        dir_ratio, byte_ratio, avg_pkt, std_iat, idle_ratio, is_short_flow,
+        packet_imbalance, byte_imbalance, flag_density, syn_minus_ack, log_pps, log_bps);
+
+    int fd = open(FIFO_PATH, O_WRONLY | O_NONBLOCK);
+    if (fd != -1) {
+        write(fd, pipe_msg, strlen(pipe_msg));
+        close(fd);
+    }
 }
+
+
 

@@ -5,6 +5,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
+import joblib
 
 # --------------------------------------------------
 # CARGA
@@ -22,9 +23,8 @@ print("Distribución test:")
 print(y_test.value_counts())
 print("-"*50)
 
-# --------------------------------------------------
 # SPLIT INTERNO SOLO EN NORMALES
-# --------------------------------------------------
+
 
 X_train, X_val = train_test_split(
     X_full,
@@ -32,18 +32,16 @@ X_train, X_val = train_test_split(
     random_state=42
 )
 
-# --------------------------------------------------
 # ESCALADO
-# --------------------------------------------------
+
 
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_val_scaled = scaler.transform(X_val)
 X_test_scaled = scaler.transform(X_test)
 
-# --------------------------------------------------
-# MODELO (hiperparámetros razonables, no sobreajuste)
-# --------------------------------------------------
+
+# MODELO
 
 model = IsolationForest(
     n_estimators=200,
@@ -56,9 +54,9 @@ model = IsolationForest(
 
 model.fit(X_train_scaled)
 
-# --------------------------------------------------
-# THRESHOLD BASADO SOLO EN VALIDATION (normales)
-# --------------------------------------------------
+
+# THRESHOLD BASADO SOLO EN VALIDATION
+
 
 val_scores = model.decision_function(X_val_scaled)
 
@@ -68,10 +66,7 @@ threshold = np.percentile(val_scores, 5)
 
 print("Threshold elegido (percentil 5% normales):", threshold)
 
-# --------------------------------------------------
-# EVALUACIÓN FINAL EN TEST (una sola vez)
-# --------------------------------------------------
-
+# EVALUACIÓN
 test_scores = model.decision_function(X_test_scaled)
 y_pred = (test_scores < threshold).astype(int)
 
@@ -80,3 +75,12 @@ print(confusion_matrix(y_test, y_pred))
 
 print("\nClassification report:")
 print(classification_report(y_test, y_pred))
+
+# Guardamos el modelo
+joblib.dump(model, 'ids_model.pkl')
+# Guardamos el escalador
+joblib.dump(scaler, 'scaler.pkl')
+# Guardamos el threshold
+joblib.dump(threshold, 'threshold.pkl')
+
+print("--- TODO GUARDADO: Modelo, Scaler y Threshold ---")
