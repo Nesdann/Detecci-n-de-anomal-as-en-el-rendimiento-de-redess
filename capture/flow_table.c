@@ -57,7 +57,7 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
         }
         n = n->next;
     }
-    printf("creo flow*****************************************************************************\n");
+    //printf("creo flow*****************************************************************************\n");
     // no existe => crear
     flow_node_t *new = malloc(sizeof(flow_node_t));
 
@@ -137,9 +137,8 @@ void flow_table_expire(flow_table_t *t,
             if (active >= ACTIVE_TIMEOUT) {
 
                 extract_features(&n->flow);
-                printf("EXPIRA y extrae flow %u packets %lu bytes\n",
-                n->flow.packets,
-                n->flow.bytes);
+                printf("EXPIRA y extrae flow, %u packets en totoal %lu bytes\n",
+                       n->flow.packets, n->flow.bytes);
 
                 *pp = n->next;
                 free(n);

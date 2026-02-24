@@ -121,13 +121,14 @@ void on_packet(u_char *args,
     double since =
         timeval_diff(header->ts, last_expire);
     //printf("since last expire: %.2f seconds\n", since);
-    struct timeval real_now;
-gettimeofday(&real_now, NULL);
+    //struct timeval real_now;
+    //gettimeofday(&real_now, NULL);
 
 //printf("REAL: %ld.%06ld\n", real_now.tv_sec, real_now.tv_usec);
 //printf("PKT : %ld.%06ld\n", header->ts.tv_sec, header->ts.tv_usec);
 //printf(">>> EXPIRE CHECK\n");
     if (since >= EXPIRE_INTERVAL) {
+        //printf(">>> Expirando flujos (%.2f segundos desde el último expire)\n", since);
         flow_table_expire(table, &header->ts);
         last_expire = header->ts;
     }
