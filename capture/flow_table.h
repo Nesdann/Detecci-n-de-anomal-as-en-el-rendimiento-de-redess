@@ -4,8 +4,8 @@
 #include "flow.h"
 
 #define FLOW_TABLE_SIZE 65536
-#define EXPIRE_INTERVAL 1   // segundo
-#define ACTIVE_TIMEOUT 4   // segundos
+#define EXPIRE_INTERVAL 15   // segundo
+#define ACTIVE_TIMEOUT 5   // segundos
 
 
 typedef struct flow_node {

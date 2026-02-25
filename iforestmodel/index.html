@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>IDS Dashboard v1.0</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; margin: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+        .status-on { color: #4ade80; font-weight: bold; }
+        .status-off { color: #f87171; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #334155; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        .alert-row { animation: flash 1s; }
+        @keyframes flash { from { background: #7f1d1d; } to { background: transparent; } }
+    </style>
+</head>
+<body>
+    <h1>🛡️ IDS Central Control <small style="font-size: 0.5em; opacity: 0.5;">v1.0 Beta</small></h1>
+    
+    <div class="grid">
+        <div class="card">
+            <h3>Estado del Sistema</h3>
+            <p>Modo: <span id="current-mode" class="status-on">Cargando...</span></p>
+            <p>Sensibilidad: <span id="current-thr">0.00</span></p>
+            <button onclick="toggleMode()">Alternar Modo Bloqueo</button>
+        </div>
+        <div class="card">
+            <h3>Estadísticas</h3>
+            <p>Alertas hoy: <span id="total-alerts">0</span></p>
+            <p>IPs Baneadas: <span id="total-banned">0</span></p>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>⚠️ Últimas Alertas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Score</th>
+                    <th>Procesamiento</th>
+                </tr>
+            </thead>
+            <tbody id="alerts-table"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function updateStats() {
+            // Actualizar Status
+            const statusRes = await fetch('/status');
+            const status = await statusRes.json();
+            document.getElementById('current-mode').innerText = status.sistema_activo ? "ACTIVO" : "OFF";
+            document.getElementById('current-thr').innerText = status.threshold;
+
+            // Actualizar Alertas
+            const alertsRes = await fetch('/alerts');
+            const alerts = await alertsRes.json();
+            document.getElementById('total-alerts').innerText = alerts.length;
+            
+            const table = document.getElementById('alerts-table');
+            table.innerHTML = alerts.reverse().map(a => `
+                <tr class="alert-row">
+                    <td>${a.timestamp || 'N/A'}</td>
+                    <td>${a.src_ip}:${a.src_p}</td>
+                    <td>${a.dst_ip}</td>
+                    <td>${a.score}</td>
+                    <td>${a.ms}ms</td>
+                </tr>
+            `).join('');
+
+            // Actualizar Baneo
+            const banRes = await fetch('/ban_list');
+            const bans = await banRes.json();
+            document.getElementById('total-banned').innerText = Object.keys(bans).length;
+        }
+
+        async function toggleMode() {
+            const current = document.getElementById('current-mode').innerText;
+            const newMode = (current === "MONITOR" || current === "ACTIVO") ? "block" : "monitor";
+            await fetch(`/config/mode?mode=${newMode}`, { method: 'POST' });
+            alert("Modo cambiado a: " + newMode);
+            updateStats();
+        }
+
+        setInterval(updateStats, 2000); // Actualizar cada 2 segundos
+        updateStats();
+    </script>
+</body>
+</html>
