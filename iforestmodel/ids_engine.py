@@ -27,29 +27,36 @@ def run_engine():
 
     while state.running:
         try:
+            print("🔍 [DEBUG 1] Intentando abrir el pipe...")
             with open(PIPE_PATH, "r") as fifo:
+                print("📖 [DEBUG 2] Pipe abierto, esperando datos del sniffer...")
                 for line in fifo:
-                    if not state.running: 
-                        break
+                    if not state.running: break
                     
                     start_t = time.perf_counter()
-                    parts = line.strip().split(',')
+                    line_data = line.strip()
+                    if not line_data: continue
+                    
+                    print(f"📩 [DEBUG 3] LÍNEA RECIBIDA: {line_data[:60]}...")
+                    parts = line_data.split(',')
+                    print(f"📊 [DEBUG 4] Columnas detectadas: {len(parts)}")
                     
                     if len(parts) < 32: 
+                        print(f"⚠️ [DEBUG] Línea rechazada por tener solo {len(parts)} columnas")
                         continue 
 
-                    # 1. Identificadores para Dashboard
+                    # 1. Identificadores
                     src_ip, dst_ip, src_p, dst_p = parts[0], parts[1], parts[2], parts[3]
 
-                    # 2. Pre-procesamiento de Features para Red Neuronal
+                    # 2. Pre-procesamiento
                     try:
                         proto = float(parts[4])
                         duration = float(parts[18])
-                        packets = float(parts[9])    # total_packets
-                        bytes_val = float(parts[10])  # total_bytes
+                        packets = float(parts[9])    
+                        bytes_val = float(parts[10])  
                         pps = float(parts[19])
                         bps = float(parts[20])
-                        bpp = float(parts[23])        # avg_pkt
+                        bpp = float(parts[23])        
                         
                         avg_pkt = bpp 
                         intensity = pps * bps
@@ -65,36 +72,30 @@ def run_engine():
                         resultado = le.classes_[idx] 
                         confianza = pred_prob[0][idx] * 100
                         
-                        # 4. Lógica de Detección y Respuesta
-                        if resultado != 'NORMAL' and src_ip not in state.whitelist:
-                            dt = (time.perf_counter() - start_t) * 1000 
-                            
-                            alerta = {
-                                "timestamp": time.strftime("%H:%M:%S"),
-                                "src_ip": src_ip,
-                                "src_p": src_p,
-                                "dst_ip": dst_ip,
-                                "dst_p": dst_p,
-                                "score": round(confianza, 2),
-                                "tipo": resultado,
-                                "ms": round(dt, 2)
-                            }
-                            
-                            state.last_alerts.append(alerta)
-                            if len(state.last_alerts) > 50: 
-                                state.last_alerts.pop(0)
+                        # 4. Forzar envío al Dashboard para ver que funcione
+                        dt = (time.perf_counter() - start_t) * 1000 
+                        
+                        alerta = {
+                            "timestamp": time.strftime("%H:%M:%S"),
+                            "src_ip": src_ip,
+                            "src_p": src_p,
+                            "dst_ip": dst_ip,
+                            "dst_p": dst_p,
+                            "score": round(confianza, 2),
+                            "tipo": resultado,
+                            "ms": round(dt, 2)
+                        }
+                        
+                        state.last_alerts.append(alerta)
+                        if len(state.last_alerts) > 50: 
+                            state.last_alerts.pop(0)
 
-                            # Gestión de baneo dinámico
-                            state.ban_list[src_ip] = state.ban_list.get(src_ip, 0) + 1
-                            
-                            if state.action_mode == "block" and state.ban_list[src_ip] >= state.auto_ban_threshold:
-                                print(f"🚫 [BLOQUEO] IP BANNEADA: {src_ip}")
+                        print(f"🔥 [ALERTA GENERADA] {resultado} de {src_ip} | Dashboard actualizado.")
 
-                            print(f"🔥 [ALERTA] {resultado} detectado de {src_ip} | Confianza: {confianza:.2f}%")
-
-                    except ValueError:
-                        continue # Salta líneas con datos corruptos o cabeceras
+                    except Exception as e_proc:
+                        print(f"❌ Error en procesamiento de IA: {e_proc}")
 
         except Exception as e:
-            time.sleep(1) # Recuperación ante cierre de pipe
+            print(f"⚠️ Error en el pipe: {e}")
+            time.sleep(1)
             continue
