@@ -19,3 +19,20 @@ def update_threshold(val: float):
 @app.get("/alerts")
 def get_alerts():
     return state.last_alerts[-10:] # Solo las últimas 10
+
+@app.post("/config/whitelist")
+def add_to_whitelist(ip: str):
+    if ip not in state.whitelist:
+        state.whitelist.append(ip)
+    return {"whitelist": state.whitelist}
+
+@app.post("/config/mode")
+def set_mode(mode: str):
+    # mode puede ser "monitor" o "block"
+    if mode in ["monitor", "block"]:
+        state.action_mode = mode
+    return {"modo_actual": state.action_mode}
+
+@app.get("/ban_list")
+def get_ban_list():
+    return state.ban_list

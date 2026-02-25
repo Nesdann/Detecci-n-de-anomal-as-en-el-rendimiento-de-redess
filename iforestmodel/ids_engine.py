@@ -47,10 +47,25 @@ def run_engine():
                 # 4. ¿Es Ataque? 
                 # USAMOS state.threshold (el que la API puede cambiar)
                 if score < state.threshold:
-                    dt = (time.perf_counter() - start_t) * 1000
+                    # Dentro de tu bucle de predicción, cuando score < state.threshold:
+
+                     if src_ip in state.whitelist:
+                         continue 
+
+                    # Si no está en la whitelist, procesamos la alerta
+                     dt = (time.perf_counter() - start_t) * 1000
+                     alerta = {"src_ip": src_ip, "score": float(score), "ms": dt}
+                     state.last_alerts.append(alerta)
+
+
+                     state.ban_list[src_ip] = state.ban_list.get(src_ip, 0) + 1
+
+                     if state.action_mode == "block" and state.ban_list[src_ip] >= state.auto_ban_threshold:
+                         print(f"🚫 [BLOQUEO] Ejecutando baneo para {src_ip}...")
+                 # os.system(f"sudo iptables -A INPUT -s {src_ip} -j DROP")
                     
                     # Creamos un diccionario con la alerta
-                    alerta = {
+                     alerta = {
                         "src_ip": src_ip,
                         "src_p": src_p,
                         "dst_ip": dst_ip,
@@ -61,10 +76,10 @@ def run_engine():
                     }
                     
                     # Guardamos la alerta en el estado global para que la API la vea
-                    state.last_alerts.append(alerta)
+                     state.last_alerts.append(alerta)
                     
                     # Limitar historial para no saturar la RAM (opcional)
-                    if len(state.last_alerts) > 100:
+                     if len(state.last_alerts) > 100:
                         state.last_alerts.pop(0)
 
-                    print(f"🔥 [ALERTA] {src_ip} -> {dst_ip} | Score: {score:.4f}")
+                     print(f"🔥 [ALERTA] {src_ip} -> {dst_ip} | Score: {score:.4f}")
