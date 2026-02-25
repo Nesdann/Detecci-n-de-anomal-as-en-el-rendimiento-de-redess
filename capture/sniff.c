@@ -11,6 +11,7 @@
 #include "features.h"
 #include <signal.h>
 
+
 pcap_t *handle_global = NULL; // Para poder cerrarlo desde el signal handler
 
 void handle_sigint(int sig) {
@@ -141,6 +142,8 @@ int main() {
     flow_table_t table;
     flow_table_init(&table);
 
+    char errbuf[PCAP_ERRBUF_SIZE];
+pcap_t *handle; 
 
     
 

@@ -4,6 +4,10 @@
 #include "time_utils.h"
 #include "flow.h"
 #include "flow_table.h"
+#include <fcntl.h>    
+#include <unistd.h>   
+#include <math.h>     
+#define FIFO_PATH "/tmp/ids_fifo"
 
 
 void flow_compute_time_features(flow_t *f,
