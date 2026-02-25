@@ -1,10 +1,17 @@
 from fastapi import FastAPI
 from config import state
 from fastapi.responses import HTMLResponse
-from config import state
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.get("/status")
 def status():
     return {

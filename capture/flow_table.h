@@ -29,7 +29,7 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
 
 void flow_table_dump(flow_table_t *t);
 
-void flow_table_expire(flow_table_t *t,
-                       const struct timeval *now);
+void flow_table_expire(flow_table_t *t,const struct timeval *now);
+void flow_table_expire_all(flow_table_t *t);
 
 #endif

@@ -83,7 +83,7 @@ flow_t *flow_table_get_or_create(flow_table_t *t,
     new->flow.iat_count=0;
     new->flow.iat_max=0;
     new->flow.iat_min=0;
-    new->flow.iat_sq_sum=0;
+    new->flow.iat_sum = 0;
     new->flow.iat_sq_sum=0;
     new->flow.idle_time_total=0;
     new->flow.idle_count=0;
