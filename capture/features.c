@@ -4,6 +4,7 @@
 #include "time_utils.h"
 #include "flow.h"
 #include "flow_table.h"
+#include <math.h>
 
 
 void flow_compute_time_features(flow_t *f,

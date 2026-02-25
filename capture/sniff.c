@@ -100,7 +100,7 @@ void on_packet(u_char *args,
     //printf("packets antes de flow update,despeus del get or crate: %lu\n", f->packets);
     //printf("ts: %ld.%06ld  last: %ld.%06ld\n",
        header->ts.tv_sec, header->ts.tv_usec,
-       f->last_seen.tv_sec, f->last_seen.tv_usec);
+       f->last_seen.tv_sec, f->last_seen.tv_usec;
 
     flow_update(f,header->ts,header->len);
     
@@ -127,9 +127,9 @@ int main() {
 
 
     
+handle = pcap_open_live("en0", 65535, 1, 1000, errbuf);
 
-
-    handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);//!!! posible para cambiar
+    //handle = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);//!!! posible para cambiar
     if (!handle) {
         fprintf(stderr, "pcap error: %s\n", errbuf);
         return 1;
