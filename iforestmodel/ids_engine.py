@@ -52,7 +52,7 @@ def run_engine():
                      if src_ip in state.whitelist:
                          continue 
 
-                    # Si no está en la whitelist, procesamos la alerta
+            # Si no está en la whitelist, procesamos la alerta
                      dt = (time.perf_counter() - start_t) * 1000
                      alerta = {"src_ip": src_ip, "score": float(score), "ms": dt}
                      state.last_alerts.append(alerta)

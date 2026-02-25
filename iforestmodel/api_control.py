@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from config import state
+from fastapi.responses import HTMLResponse
+from config import state
 
 app = FastAPI()
 
@@ -36,3 +38,8 @@ def set_mode(mode: str):
 @app.get("/ban_list")
 def get_ban_list():
     return state.ban_list
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard():
+    with open("index.html", "r") as f:
+        return f.read()
