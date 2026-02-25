@@ -1,5 +1,6 @@
 #include <pcap.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
@@ -153,7 +154,17 @@ int main() {
     signal(SIGINT, handle_sigint);
 
     printf("Sentinel Sniffer activo en en0... (Ctrl+C para finalizar)\n");
+    
 
+    printf("🧪 Probando conexión con Python...\n");
+    int fd_test = open("/Users/jofreivaan_02/Detecci-n-de-anomal-as-en-el-rendimiento-de-redess/capture/ids_pipe", O_WRONLY);
+if (fd_test != -1) {
+    write(fd_test, "TEST,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\n", 68);
+    close(fd_test);
+    printf("✅ Conexión inicial exitosa. Iniciando captura...\n");
+} else {
+    perror("❌ ERROR CRÍTICO: No se pudo abrir el pipe");
+}
     pcap_loop(handle_global, -1, on_packet, (u_char *)&table);
 
    

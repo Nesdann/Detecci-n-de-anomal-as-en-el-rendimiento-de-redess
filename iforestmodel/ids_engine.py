@@ -17,7 +17,7 @@ try:
 except Exception as e:
     print(f"❌ ERROR al cargar el modelo: {e}")
 
-PIPE_PATH = "/tmp/ids_pipe"
+PIPE_PATH = "./ids_pipe"
 
 def run_engine():
     if not os.path.exists(PIPE_PATH):

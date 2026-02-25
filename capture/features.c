@@ -8,8 +8,7 @@
 #include <unistd.h>   
 #include <math.h>
 #include <string.h>     
-
-#define FIFO_PATH "/tmp/ids_pipe"
+#define FIFO_PATH "./ids_pipe"
 
 void flow_compute_time_features(flow_t *f,
                                 double *duration,
