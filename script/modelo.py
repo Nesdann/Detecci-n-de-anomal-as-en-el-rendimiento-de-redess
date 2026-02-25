@@ -6,8 +6,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-# --- CONFIGURACIÓN Y RUTAS ---
+# CONFIGURACIÓN Y RUTAS
 FILE_PATH = '../capture/test.csv'  
 MODEL_NAME = 'ids_neural_model.joblib' 
 SCALER_NAME = 'scaler.pkl'
@@ -24,6 +25,8 @@ def etiquetar_trafico(row):
     if row['pps'] > 10 and row['bytes'] > 500000:
         return 'FLOOD'
     return 'NORMAL'
+
+
 
 #  ENTRENAMIENTO
 def ejecutar_entrenamiento():
@@ -50,7 +53,7 @@ def ejecutar_entrenamiento():
     for col in columnas_numericas:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # Eliminamos cualquier fila que haya quedado con NaNs 
+    # Eliminamos cualquier fila que haya quedado con nans
     df = df.dropna()
     print(f"Dataset limpio: {len(df)} registros listos para procesar.")
     
@@ -71,7 +74,7 @@ def ejecutar_entrenamiento():
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
     
-    print("Entrenando Red Neuronal (MLP)...")
+    # Entrenando Red Neuronal (MLP)
     mlp = MLPClassifier(
         hidden_layer_sizes=(32, 16), 
         max_iter=1000, 
@@ -82,19 +85,29 @@ def ejecutar_entrenamiento():
     
     mlp.fit(X_train, y_train)
 
-    print(f"Precisión en entrenamiento: {mlp.score(X_train, y_train) * 100:.2f}%")
-    print(f"Precisión en test: {mlp.score(X_test, y_test) * 100:.2f}%")
-
-    # Verificación de Precisión
+    #MÉTRICAS
     y_pred = mlp.predict(X_test)
-    precision = accuracy_score(y_test, y_pred) * 100
-    print(f"Precisión final: {precision:.2f}%")
+
+    print("\n" + "="*30)
+    print(" REPORTES DE RENDIMIENTO ")
+    print("="*30)
+
+    # Matriz de Confusión
+    print("Matriz de Confusión:")
+    print(confusion_matrix(y_test, y_pred))
+
+    # Reporte Detallado
+    print("\nInforme de Clasificación:")
+    print(classification_report(y_test, y_pred, target_names=le.classes_))
+
+    precision_final = accuracy_score(y_test, y_pred) * 100
+    print(f"Precisión Global: {precision_final:.2f}%")
 
     # Guardar Artefactos
     joblib.dump(mlp, MODEL_NAME)
     joblib.dump(scaler, SCALER_NAME)
     joblib.dump(le, ENCODER_NAME)
-    print(f" neurona exportado con éxito como {MODEL_NAME}")
+    print(f"\nModelo exportado con éxito como {MODEL_NAME}")
 
 if __name__ == "__main__":
     ejecutar_entrenamiento()
