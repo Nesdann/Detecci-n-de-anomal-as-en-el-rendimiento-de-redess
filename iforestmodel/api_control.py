@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from config import state
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from database import obtener_historial_db 
+
 
 app = FastAPI()
 
@@ -50,3 +52,9 @@ def get_ban_list():
 async def dashboard():
     with open("index.html", "r") as f:
         return f.read()
+
+@app.get("/historial")
+def get_historial():
+    """Ruta para obtener los ataques guardados en SQLite"""
+    data = obtener_historial_db()
+    return {"status": "success", "total": len(data), "data": data}

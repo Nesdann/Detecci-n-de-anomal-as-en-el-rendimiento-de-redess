@@ -2,9 +2,10 @@ import threading
 import uvicorn
 from ids_engine import run_engine
 from api_control import app
+from database import inicializar_db
 
 if __name__ == "__main__":
-    # 1. Lanzamos el motor en un hilo de fondo
+    inicializar_db()
     engine_thread = threading.Thread(target=run_engine)
     engine_thread.daemon = True  # Para que muera si cerrás el main
     engine_thread.start()

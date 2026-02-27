@@ -4,11 +4,11 @@
 #include "time_utils.h"
 #include "flow.h"
 #include "flow_table.h"
-#include <fcntl.h>    
-#include <unistd.h>   
+#include <fcntl.h>
+#include <unistd.h>
 #include <math.h>
-#include <string.h>     
-#define FIFO_PATH "./ids_pipe"
+#include <string.h>
+#define PIPE_PATH "../ids_pipe"
 
 void flow_compute_time_features(flow_t *f,
                                 double *duration,
@@ -19,14 +19,18 @@ void flow_compute_time_features(flow_t *f,
 {
     *duration = timeval_diff(f->last_seen, f->first_seen);
 
-    if (f->iat_count > 0) {
+    if (f->iat_count > 0)
+    {
         *mean_iat = f->iat_sum / f->iat_count;
         double variance = (f->iat_sq_sum / f->iat_count) - ((*mean_iat) * (*mean_iat));
-        if (variance < 0) variance = 0;
+        if (variance < 0)
+            variance = 0;
         *std_iat = sqrt(variance);
-    } else {
+    }
+    else
+    {
         *mean_iat = 0;
-        *std_iat  = 0;
+        *std_iat = 0;
     }
 
     if (f->idle_count > 0)
@@ -43,11 +47,13 @@ void flow_compute_time_features(flow_t *f,
 void extract_features(const flow_t *f)
 {
     double duration, mean_iat, std_iat, idle_mean, idle_ratio;
-    
-    if (f->packets == 0) return;
+
+    if (f->packets == 0)
+        return;
 
     double dur = timeval_diff(f->last_seen, f->first_seen);
-    if (dur <= 0.0) dur = 1e-6;
+    if (dur <= 0.0)
+        dur = 1e-6;
 
     double pps = (double)f->packets / dur;
     double bps = (double)f->bytes / dur;
@@ -61,7 +67,7 @@ void extract_features(const flow_t *f)
     inet_ntop(AF_INET, &f->key.src_ip, src, sizeof(src));
     inet_ntop(AF_INET, &f->key.dst_ip, dst, sizeof(dst));
 
-    flow_compute_time_features((flow_t*)f, &duration, &mean_iat, &std_iat, &idle_mean, &idle_ratio);
+    flow_compute_time_features((flow_t *)f, &duration, &mean_iat, &std_iat, &idle_mean, &idle_ratio);
 
     unsigned long long total_packets = (unsigned long long)f->fwd_packets + f->bwd_packets;
     unsigned long long total_bytes = (unsigned long long)f->fwd_bytes + f->bwd_bytes;
@@ -78,59 +84,59 @@ void extract_features(const flow_t *f)
     double byte_imbalance = fabs((double)f->fwd_bytes - (double)f->bwd_bytes);
     double flag_density = (double)(f->syn_count + f->ack_count + f->fin_count + f->rst_count) / (total_packets + 1e-6);
     double syn_minus_ack = syn_ratio - ack_ratio;
-    double log_pps = log1p(pps); 
+    double log_pps = log1p(pps);
     double log_bps = log1p(bps);
 
-    // Guardar en CSV 
+    // Guardar en CSV
     FILE *fp = fopen("train_normal.csv", "a");
-    if (fp) {
+    if (fp)
+    {
         int label = 0;
         fprintf(fp,
-            "%s,%u,%s,%u,%u,"
-            "%llu,%llu,%llu,%llu," 
-            "%llu,%llu,"             
-            "%u,%u,%u,%u,"
-            "%.6f,%.6f,%.6f,"
-            "%.6f,%.6f,%.6f,"
-            "%.6f,%.6f,%.6f,"
-            "%.6f,%.6f,%d,%.6f,%d\n",
-            src, f->key.src_port, dst, f->key.dst_port, f->key.proto,
-            (unsigned long long)f->fwd_packets, (unsigned long long)f->bwd_packets, 
-            (unsigned long long)f->fwd_bytes, (unsigned long long)f->bwd_bytes,
-            total_packets, total_bytes,
-            f->syn_count, f->ack_count, f->fin_count, f->rst_count,
-            syn_ratio, rst_ratio, ack_ratio, dur, pps, bps,
-            dir_ratio, byte_ratio, avg_pkt, std_iat, idle_ratio, is_short_flow, dur, label
-        );
+                "%s,%u,%s,%u,%u,"
+                "%llu,%llu,%llu,%llu,"
+                "%llu,%llu,"
+                "%u,%u,%u,%u,"
+                "%.6f,%.6f,%.6f,"
+                "%.6f,%.6f,%.6f,"
+                "%.6f,%.6f,%.6f,"
+                "%.6f,%.6f,%d,%.6f,%d\n",
+                src, f->key.src_port, dst, f->key.dst_port, f->key.proto,
+                (unsigned long long)f->fwd_packets, (unsigned long long)f->bwd_packets,
+                (unsigned long long)f->fwd_bytes, (unsigned long long)f->bwd_bytes,
+                total_packets, total_bytes,
+                f->syn_count, f->ack_count, f->fin_count, f->rst_count,
+                syn_ratio, rst_ratio, ack_ratio, dur, pps, bps,
+                dir_ratio, byte_ratio, avg_pkt, std_iat, idle_ratio, is_short_flow, dur, label);
         fclose(fp);
     }
 
-    // 2. Enviar al PIPE
     char pipe_msg[2048];
     snprintf(pipe_msg, sizeof(pipe_msg),
-        "%s,%s,%u,%u,%u," 
-        "%llu,%llu,%llu,%llu,%llu,%llu," 
-        "%u,%u,%u,%u,"
-        "%.6f,%.6f,%.6f,"
-        "%.6f,%.6f,%.6f,"
-        "%.6f,%.6f,%.6f,"
-        "%.6f,%.6f,%d,"
-        "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
-        src, dst, f->key.src_port, f->key.dst_port, f->key.proto,
-        (unsigned long long)f->fwd_packets, (unsigned long long)f->bwd_packets, 
-        (unsigned long long)f->fwd_bytes, (unsigned long long)f->bwd_bytes, 
-        total_packets, total_bytes,
-        f->syn_count, f->ack_count, f->fin_count, f->rst_count,
-        syn_ratio, rst_ratio, ack_ratio, dur, pps, bps,
-        dir_ratio, byte_ratio, avg_pkt, std_iat, idle_ratio, is_short_flow,
-        packet_imbalance, byte_imbalance, flag_density, syn_minus_ack, log_pps, log_bps);
+             "%s,%s,%u,%u,%u,"
+             "%llu,%llu,%llu,%llu,%llu,%llu,"
+             "%u,%u,%u,%u,"
+             "%.6f,%.6f,%.6f,"
+             "%.6f,%.6f,%.6f,"
+             "%.6f,%.6f,%.6f,"
+             "%.6f,%.6f,%d,"
+             "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+             src, dst, f->key.src_port, f->key.dst_port, f->key.proto,
+             (unsigned long long)f->fwd_packets, (unsigned long long)f->bwd_packets,
+             (unsigned long long)f->fwd_bytes, (unsigned long long)f->bwd_bytes,
+             total_packets, total_bytes,
+             f->syn_count, f->ack_count, f->fin_count, f->rst_count,
+             syn_ratio, rst_ratio, ack_ratio, dur, pps, bps,
+             dir_ratio, byte_ratio, avg_pkt, std_iat, idle_ratio, is_short_flow,
+             packet_imbalance, byte_imbalance, flag_density, syn_minus_ack, log_pps, log_bps);
 
-    int fd = open(FIFO_PATH, O_WRONLY); 
-    if (fd != -1) {
+    int fd = open(PIPE_PATH, O_WRONLY);
+    if (fd != -1)
+    {
         write(fd, pipe_msg, strlen(pipe_msg));
         close(fd);
-    } else {
-        // Solo imprimimos si realmente hay un error de apertura
-        // printf("❌ Pipe no disponible\n"); 
+    }
+    else
+    {
     }
 }

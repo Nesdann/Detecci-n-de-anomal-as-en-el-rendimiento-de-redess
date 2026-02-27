@@ -2,112 +2,78 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
 
-# CONFIGURACIÓN Y RUTAS
-FILE_PATH = '../capture/test.csv'  
-MODEL_NAME = 'ids_neural_model.joblib' 
+
+MODEL_NAME = 'iforest_model.joblib' 
 SCALER_NAME = 'scaler.pkl'
-ENCODER_NAME = 'label_encoder.pkl'
 FEATURES = ['proto', 'duration', 'packets', 'bytes', 'pps', 'bps', 'bpp', 'avg_pkt', 'intensity']
 
-# condiciones
-def etiquetar_trafico(row):
-    """Reglas  para clasificar el tráfico """
-    # SCAN: pocos paquetes y poco peso
-    if row['packets'] < 5 and row['avg_pkt'] < 100:
-        return 'SCAN'
-    # FLOOD: alta intensidad y muchos bytes
-    if row['pps'] > 10 and row['bytes'] > 500000:
-        return 'FLOOD'
-    return 'NORMAL'
-
-
-
-#  ENTRENAMIENTO
 def ejecutar_entrenamiento():
-    print(" Fusionando archivos para máxima precisión...")
-    archivos = [
-        '../iforestmodel/train_attack.csv', 
-        '../iforestmodel/train_normal.csv',
-        '../capture/test.csv'
-    ]
+    print(" Entrenando Isolation Forest para detección explicativa...")
     
+    
+    
+    archivos = [
+        '../capture/train_normal.csv', 
+        'train_normal.csv', 
+        './train_normal.csv',
+        '../iforestmodel/train_normal.csv'
+    ]
     lista_df = []
-    columnas_raw = ['src_ip', 'dst_ip', 'proto', 'duration', 'packets', 'bytes', 'pps', 'bps', 'bpp']
+    columnas_raw = [
+    "src_ip","dst_ip","src_port","dst_port","proto",
+    "fwd_pkts","bwd_pkts","fwd_bytes","bwd_bytes",
+    "packets","bytes",
+    "syn_count","ack_count","fin_count","rst_count",
+    "syn_ratio","rst_ratio","ack_ratio",
+    "duration","pps","bps",
+    "dir_ratio","byte_ratio","avg_pkt",
+    "std_iat","idle_ratio","is_short_flow",
+    "packet_imbalance","byte_imbalance","flag_density","syn_minus_ack","log_pps","log_bps"
+]
     
     for f in archivos:
         if os.path.exists(f):
-        
+            print(f"📁 Leyendo archivo: {f}")
             temp_df = pd.read_csv(f, header=None, names=columnas_raw, on_bad_lines='skip', low_memory=False)
+            print(f"   -> Encontradas {len(temp_df)} filas.")
             lista_df.append(temp_df)
+        else:
+            print(f"⚠️ Archivo no encontrado: {f}")
     
-    df = pd.concat(lista_df, ignore_index=True)
+    if not lista_df:
+        print(" ERROR : No se encontró ningún archivo con datos. El entrenamiento no puede empezar.")
+        return
 
-    # Convertimos las columnas numéricas 
-    columnas_numericas = ['proto', 'duration', 'packets', 'bytes', 'pps', 'bps', 'bpp']
+    df = pd.concat(lista_df, ignore_index=True)
+    
+    
+    columnas_numericas = ['proto', 'duration', 'packets', 'bytes', 'pps', 'bps', 'avg_pkt']
     for col in columnas_numericas:
         df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Limpieza de valores nulos o infinitos
+    df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES)
+    
+    print(f"✅ Total de filas válidas tras limpieza: {len(df)}")
 
-    # Eliminamos cualquier fila que haya quedado con nans
-    df = df.dropna()
-    print(f"Dataset limpio: {len(df)} registros listos para procesar.")
-    
-    
-    # Feature 
-    df['avg_pkt'] = df['bytes'] / df['packets'].replace(0, 1)
+    if len(df) == 0:
+        print(" ERROR: Después de limpiar los datos, quedaron 0 filas. Revisa el formato de tus CSV.")
+        return
+
+    #
+    df['bpp'] = df['bytes'] / df['packets'].replace(0, 1)
     df['intensity'] = df['pps'] * df['bps']
-    df['etiqueta_esperada'] = df.apply(etiquetar_trafico, axis=1)
 
-    # Preparación de datos
     X = df[FEATURES]
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(X) 
 
-    le = LabelEncoder()
-    y = le.fit_transform(df['etiqueta_esperada'])
+    model = IsolationForest(contamination=0.05, random_state=42, n_estimators=100)
+    model.fit(X_scaled)
 
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
-
-    
-    # Entrenando Red Neuronal (MLP)
-    mlp = MLPClassifier(
-        hidden_layer_sizes=(32, 16), 
-        max_iter=1000, 
-        activation='relu', 
-        solver='adam', 
-        random_state=42
-    )
-    
-    mlp.fit(X_train, y_train)
-
-    #MÉTRICAS
-    y_pred = mlp.predict(X_test)
-
-    print("\n" + "="*30)
-    print(" REPORTES DE RENDIMIENTO ")
-    print("="*30)
-
-    # Matriz de Confusión
-    print("Matriz de Confusión:")
-    print(confusion_matrix(y_test, y_pred))
-
-    # Reporte Detallado
-    print("\nInforme de Clasificación:")
-    print(classification_report(y_test, y_pred, target_names=le.classes_))
-
-    precision_final = accuracy_score(y_test, y_pred) * 100
-    print(f"Precisión Global: {precision_final:.2f}%")
-
-    # Guardar Artefactos
-    joblib.dump(mlp, MODEL_NAME)
+    joblib.dump(model, MODEL_NAME)
     joblib.dump(scaler, SCALER_NAME)
-    joblib.dump(le, ENCODER_NAME)
-    print(f"\nModelo exportado con éxito como {MODEL_NAME}")
-
-if __name__ == "__main__":
-    ejecutar_entrenamiento()
+    print(f"🚀 ¡Modelo guardado con éxito! ({len(df)} muestras procesadas)")
