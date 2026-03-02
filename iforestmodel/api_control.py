@@ -3,7 +3,10 @@ from config import state
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from database import obtener_historial_db 
-
+import threading
+from modelo import ejecutar_entrenamiento
+import time
+from ids_engine import recargar_modelo
 
 app = FastAPI()
 
@@ -58,3 +61,25 @@ def get_historial():
     """Ruta para obtener los ataques guardados en SQLite"""
     data = obtener_historial_db()
     return {"status": "success", "total": len(data), "data": data}
+
+
+@app.post("/config/calibrate")
+async def calibrate(seconds: int = 60):
+    if state.is_calibrating:
+        return {"status": "error", "message": "Ya hay una calibración en curso"}
+
+    def background_calibration():
+        state.is_calibrating = True
+        print(f"🛠️ Calibrando... Capturando tráfico por {seconds}s")
+        
+        time.sleep(seconds)
+        
+        state.is_calibrating = False
+        print("🧠 Entrenando nuevo modelo...")
+        ejecutar_entrenamiento()
+        
+        recargar_modelo()
+        print("✅ Calibración completa y modelo actualizado.")
+
+    threading.Thread(target=background_calibration).start()
+    return {"status": "iniciado", "segundos": seconds}

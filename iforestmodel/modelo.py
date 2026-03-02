@@ -22,7 +22,7 @@ def ejecutar_entrenamiento():
         return
 
     
-    df = pd.read_csv(archivo)
+    df = pd.read_csv(archivo, names=FEATURES)
     
     
     df = df.rename(columns={

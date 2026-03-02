@@ -6,6 +6,8 @@ import os
 import warnings
 from config import state 
 from database import guardar_alerta
+from modelo import FEATURES, ejecutar_entrenamiento
+import csv
 
 warnings.filterwarnings("ignore")
 
@@ -38,6 +40,15 @@ def obtener_explicacion(X_scaled, X_raw):
         return f"Tamaño sospechoso ({valor:.2f} bpp)"
 
     return f"Inusual: {feature}"
+
+def recargar_modelo():
+    global model, scaler
+    try:
+        model = joblib.load('iforest_model.joblib')
+        scaler = joblib.load('scaler.pkl')
+        print("🔄 [SISTEMA] ¡Nueva IA cargada y lista para detectar!")
+    except Exception as e:
+        print(f"❌ Error recargando modelo: {e}")
 
 def run_engine():
     # Aseguramos que el pipe exista con permisos en Mac
@@ -82,6 +93,14 @@ def run_engine():
                         intensity = pps * bps
                         
                         features_list = [proto, duration, packets, bytes_val, pps, bps, bpp, avg_pkt, intensity]
+
+                        #calibracion: guardamos el dato para entrenar después
+                        if state.is_calibrating:
+                            with open('train_normal_limpio.csv', 'a', newline='') as f:
+                              writer = csv.writer(f)
+                              writer.writerow(features_list)
+                            continue # Saltamos la predicción porque estamos aprendiendo
+
                         X_raw = np.array(features_list).reshape(1, -1)
                         X_scaled = scaler.transform(X_raw)
                         

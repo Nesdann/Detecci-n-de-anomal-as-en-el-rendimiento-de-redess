@@ -3,6 +3,8 @@ class GlobalState:
         self.threshold = 0.05
         self.running = True
         self.last_alerts = []  # Lista de dicts: {"ip": "...", "score": ...}
+        # En config.py, dentro de GlobalState:
+        self.is_calibrating = False
 
 # Creamos una única instancia para todo el programa
 

@@ -112,7 +112,7 @@ int main()
     // Ruta relativa para que le funcione a tu amigo
     const char *PIPE_REL_PATH = "../ids_pipe";
 
-    handle_global = pcap_open_live("en0", 65535, 1, 1000, errbuf);
+    handle_global = pcap_open_live("enp5s0", 65535, 1, 1000, errbuf);//NF
     if (!handle_global)
     {
         fprintf(stderr, "Error abriendo interfaz en0: %s\n", errbuf);
@@ -121,7 +121,7 @@ int main()
 
     signal(SIGINT, handle_sigint);
 
-    printf("Sentinel Sniffer activo en en0...\n");
+    printf("Sentinel Sniffer activo en enp5s0...\n");
 
     // 1. Crear el pipe si no existe (con permisos 0666)
     if (mkfifo(PIPE_REL_PATH, 0666) == -1)

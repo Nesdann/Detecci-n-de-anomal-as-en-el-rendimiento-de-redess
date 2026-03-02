@@ -136,6 +136,11 @@
         <h1>🛡️ IDS Central Control <small style="font-size: 0.5em; opacity: 0.5;">v1.1 IForest Edition</small></h1>
         <button class="btn-history" onclick="abrirHistorial()">📂 Ver Historial (SQLite)</button>
     </div>
+    <div class="card">
+      <h3>Auto-Calibración</h3>
+      <p>Estado: <span id="cal-status">Normal</span></p>
+      <button onclick="startCalibration()" style="background: #8b5cf6;">Aprender Tráfico Actual</button>
+    </div>
 
     <div class="grid">
         <div class="card">
@@ -255,6 +260,14 @@
             await fetch(`/config/mode?mode=${newMode}`, { method: 'POST' });
             updateStats();
         }
+
+        async function startCalibration() {
+          const sec = prompt("¿Cuántos segundos de tráfico normal querés capturar?", "60");
+          if (sec) {
+            await fetch(`/config/calibrate?seconds=${sec}`, { method: 'POST' });
+            alert("Calibración iniciada. Navegá normalmente por la red.");
+    }
+}
 
         setInterval(updateStats, 2000);
         updateStats();
