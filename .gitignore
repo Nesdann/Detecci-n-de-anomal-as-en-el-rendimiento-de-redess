@@ -1,4 +1,18 @@
 venv/
 __pycache__/
 *.pyc
+# Bases de datos
+*.db
+*.sqlite3
 
+
+capture/train_normal.csv
+
+
+.venv/
+env/
+
+
+__pycache__/
+*.py[cod]
+.DS_Store
