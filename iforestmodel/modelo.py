@@ -9,7 +9,11 @@ MODEL_NAME = 'iforest_model.joblib'
 SCALER_NAME = 'scaler.pkl'
 
 
-FEATURES = ['proto', 'duration', 'packets', 'bytes', 'pps', 'bps', 'bpp', 'avg_pkt', 'intensity']
+FEATURES = ['proto', 'fwd_packets', 'bwd_packets', 'fwd_bytes', 'bwd_bytes', 
+    'total_packets', 'total_bytes', 'syn_count', 'ack_count', 'fin_count', 'rst_count',
+    'syn_ratio', 'rst_ratio', 'ack_ratio', 'duration', 'pps', 'bps',
+    'dir_ratio', 'byte_ratio', 'avg_pkt', 'std_iat', 'idle_ratio', 'is_short_flow',
+    'packet_imbalance', 'byte_imbalance', 'flag_density', 'syn_minus_ack', 'log_pps', 'log_bps']
 
 def ejecutar_entrenamiento():
     print("🧠 Entrenando IA con tu archivo: train_normal_limpio")
@@ -24,19 +28,8 @@ def ejecutar_entrenamiento():
     
     df = pd.read_csv(archivo, names=FEATURES)
     
-    
-    df = df.rename(columns={
-        'total_packets': 'packets',
-        'total_bytes': 'bytes'
-    })
-    
-    
-    if 'proto' not in df.columns:
-        df['proto'] = 6 
 
-    
-    df['bpp'] = df['bytes'] / df['packets'].replace(0, 1)
-    df['intensity'] = df['pps'] * df['bps']
+
 
     
     X = df[FEATURES].dropna()
@@ -53,7 +46,7 @@ def ejecutar_entrenamiento():
     
     joblib.dump(model, MODEL_NAME)
     joblib.dump(scaler, SCALER_NAME)
-    print(f" ¡IA Calibrada!")
+    print(f" ¡IA Calibrada!29")
 
 if __name__ == "__main__":
     ejecutar_entrenamiento()

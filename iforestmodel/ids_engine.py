@@ -71,7 +71,7 @@ def run_engine():
                     parts = line_data.split(',')
                     
                     
-                    if len(parts) < 25: 
+                    if len(parts) < 33: 
                         continue 
 
                     
@@ -82,26 +82,17 @@ def run_engine():
 
                     try:
                         
-                        proto     = float(parts[4])
-                        duration  = float(parts[18])
-                        packets   = float(parts[5])    
-                        bytes_val = float(parts[7])  
-                        pps       = float(parts[19])
-                        bps       = float(parts[20])
-                        bpp       = float(parts[23])        
-                        avg_pkt   = bpp 
-                        intensity = pps * bps
+                        raw_features = [float(x) for x in parts[4:]]
                         
-                        features_list = [proto, duration, packets, bytes_val, pps, bps, bpp, avg_pkt, intensity]
 
                         #calibracion: guardamos el dato para entrenar después
                         if state.is_calibrating:
                             with open('train_normal_limpio.csv', 'a', newline='') as f:
                               writer = csv.writer(f)
-                              writer.writerow(features_list)
+                              writer.writerow(raw_features)
                             continue # Saltamos la predicción porque estamos aprendiendo
 
-                        X_raw = np.array(features_list).reshape(1, -1)
+                        X_raw = np.array(raw_features).reshape(1, -1)
                         X_scaled = scaler.transform(X_raw)
                         
                         
